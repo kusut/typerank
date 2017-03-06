@@ -12,7 +12,7 @@ data Entry = Entry
 
 
 instance showEntry :: Show Entry where
-  show (Entry x) = x.name ++ ":" ++ show x.value
+  show (Entry x) = x.name <> ":" <> show x.value
 
 instance eqEntry :: Eq Entry where
   eq (Entry x) (Entry y) = x.value == y.value

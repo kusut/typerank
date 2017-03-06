@@ -2,14 +2,13 @@ module Main where
 
 import Prelude
 
-import Control.Monad.Aff (runAff)
 import Control.Monad.Eff (Eff())
-import Control.Monad.Eff.Exception (throwException)
+import Data.Maybe (Maybe(..))
+import Halogen as H
+import Halogen.VDom.Driver (runUI)
+import Halogen.Aff (HalogenEffects, runHalogenAff, awaitBody)
+import Halogen.HTML as HH
 
-import Halogen
-import Halogen.Util (appendToBody)
-import qualified Halogen.HTML.Indexed as H
-import qualified Halogen.HTML.Events.Indexed as E
 
 type State = { world :: String }
 
@@ -19,24 +18,30 @@ initialState = { world: "ZA WARUDO" }
 data Query a = Get (String -> a)
 
 
-ui :: forall g. (Functor g) => Component State Query g
-ui = component render eval
-  where
+komponen :: forall m. H.Component HH.HTML Query Unit Void m
+komponen =
+  H.component
+    { initialState: const initialState
+    , render
+    , eval
+    , receiver: const Nothing
+    }
 
-  render :: State -> ComponentHTML Query
-  render state =
-    H.div_
-      [ H.h1_
-          [ H.text state.world ]
-      ]
 
-  eval :: Natural Query (ComponentDSL State Query g)
-  eval (Get next) = do
-    world <- gets $ _.world
-    pure $ next world
+render :: State -> H.ComponentHTML Query
+render state =
+  HH.div_
+    [ HH.h1_
+      [ HH.text state.world ]
+    ]
+
+eval :: forall m. Query ~> H.ComponentDSL State Query Void m
+eval (Get next) = do
+  world <- H.gets $ _.world
+  pure $ next world
 
 
 main :: Eff (HalogenEffects ()) Unit
-main = runAff throwException (const (pure unit)) $ do
-  app <- runUI ui initialState
-  appendToBody app.node
+main = runHalogenAff  $ do
+  body <- awaitBody
+  runUI komponen unit body
